@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prompt Forge — Perfect Prompt Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ─── Reset & Base ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f8f9fc;
+  --surface:   #ffffff;
+  --surface2:  #f1f3f9;
+  --border:    #e2e6f0;
+  --border2:   #cdd2e6;
+  --accent:    #5b4cf5;
+  --accent-lt: #ede9ff;
+  --accent-dk: #4338ca;
+  --text:      #111827;
+  --muted:     #6b7280;
+  --muted2:    #9ca3af;
+  --green:     #10b981;
+  --red:       #ef4444;
+  --radius:    12px;
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-rows: 60px 1fr;
+  height: 100vh;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-logo {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--accent), #818cf8);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.nav-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+
+.nav-sub {
+  font-size: 12px;
+  color: var(--muted2);
+  font-weight: 400;
+}
+
+.nav-pill {
+  margin-left: auto;
+  background: var(--accent-lt);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  letter-spacing: 0.2px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  overflow: hidden;
+}
+
+/* ─── Panels ─────────────────────────────────────────────────────── */
+.panel {
+  overflow-y: auto;
+  padding: 28px 24px;
+}
+
+.left-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.right-panel {
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Form Elements ──────────────────────────────────────────────── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.field-label .req { color: var(--accent); margin-left: 2px; }
+
+textarea, input[type="text"] {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13.5px;
+  font-family: 'Inter', sans-serif;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+textarea:focus, input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,76,245,.12);
+}
+
+textarea { min-height: 90px; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ─── Segment / Pill selectors ───────────────────────────────────── */
+.seg {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.seg-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.seg-btn:hover { border-color: var(--accent); color: var(--accent); }
+.seg-btn.active {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ─── Toggle cards ───────────────────────────────────────────────── */
+.toggles { display: flex; flex-direction: column; gap: 8px; }
+
+.toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+
+.toggle-card:hover { border-color: var(--border2); }
+.toggle-card.on { background: var(--accent-lt); border-color: var(--accent); }
+
+.tc-left { display: flex; flex-direction: column; gap: 2px; }
+.tc-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.tc-desc  { font-size: 11.5px; color: var(--muted); }
+
+.pill-switch {
+  width: 38px; height: 22px;
+  border-radius: 99px;
+  background: var(--border2);
+  position: relative;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.pill-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 99px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s;
+}
+.toggle-card.on .pill-switch { background: var(--accent); }
+.toggle-card.on .pill-switch::after { transform: translateX(16px); }
+
+/* ─── Divider ────────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); }
+
+/* Section header */
+.sec-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+
+/* ─── Generate button ────────────────────────────────────────────── */
+.gen-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  border: none;
+  border-radius: 11px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  letter-spacing: -0.1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 8px rgba(91,76,245,.35);
+}
+
+.gen-btn:hover { background: var(--accent-dk); box-shadow: 0 4px 14px rgba(91,76,245,.45); }
+.gen-btn:active { transform: scale(.985); }
+
+.gen-btn .icon { font-size: 16px; }
+
+/* ─── Output area ────────────────────────────────────────────────── */
+.out-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.out-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.out-meta {
+  font-size: 11px;
+  color: var(--muted2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.out-actions { display: flex; gap: 8px; align-items: center; }
+
+.act-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.act-btn:hover { border-color: var(--accent); color: var(--accent); }
+.act-btn.success { border-color: var(--green); color: var(--green); background: #f0fdf9; }
+
+#output-area {
+  flex: 1;
+  min-height: 320px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#output-area.has-content { border-color: var(--border); }
+
+.out-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted2);
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.out-empty-icon {
+  width: 52px; height: 52px;
+  background: var(--surface2);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+}
+
+.out-empty h3 { font-size: 15px; color: var(--muted); font-weight: 600; }
+.out-empty p  { font-size: 13px; line-height: 1.6; max-width: 280px; }
+
+#prompt-output {
+  flex: 1;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  padding: 20px;
+  resize: none;
+  outline: none;
+  display: none;
+}
+
+/* ─── Tips row ───────────────────────────────────────────────────── */
+.tips-row {
+  display: none;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tip-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.tip-chip .dot {
+  width: 7px; height: 7px;
+  border-radius: 99px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ─── Quality bar ────────────────────────────────────────────────── */
+.quality-bar-wrap {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.quality-label { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+
+.quality-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.quality-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), #818cf8);
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+  width: 0%;
+}
+
+.quality-score { font-size: 13px; font-weight: 700; color: var(--accent); min-width: 36px; text-align: right; }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .workspace { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .left-panel { border-right: none; border-bottom: 1px solid var(--border); max-height: 60vh; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">⚡</div>
+    <div>
+      <span class="nav-title">Prompt Forge</span>
+      <span class="nav-sub" style="margin-left:8px;">Perfect Prompt Generator</span>
+    </div>
+    <div class="nav-pill">Claude-Optimized</div>
+  </nav>
+
+  <div class="workspace">
+
+    <!-- ── LEFT: Inputs ─────────────────────────────────────────── -->
+    <div class="panel left-panel">
+
+      <!-- Task -->
+      <div class="field">
+        <label class="field-label">What do you need? <span class="req">*</span></label>
+        <textarea id="task" rows="4"
+          placeholder="Describe your goal clearly. e.g. Write a cold outreach email to a fintech startup founder explaining why they should integrate our payment API."></textarea>
+      </div>
+
+      <!-- Domain + Audience -->
+      <div class="grid2">
+        <div class="field">
+          <label class="field-label">Domain</label>
+          <input type="text" id="domain" placeholder="e.g. marketing" />
+        </div>
+        <div class="field">
+          <label class="field-label">Audience</label>
+          <input type="text" id="audience" placeholder="e.g. C-suite" />
+        </div>
+      </div>
+
+      <!-- Constraints -->
+      <div class="field">
+        <label class="field-label">Constraints <span style="color:var(--muted2);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="constraints" rows="2"
+          placeholder="e.g. Under 200 words. No bullet points. Conversational tone."></textarea>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Tone -->
+      <div class="field">
+        <div class="sec-head" style="margin-bottom:8px;">Tone</div>
+        <div class="seg" id="tone-seg">
+          <button class="seg-btn active" data-v="formal">Formal</button>
+          <button class="seg-btn" data-v="neutral">Neutral</button>
+          <button class="seg-btn" data-v="casual">Casual</button>
+        </div>
+      </div>
+
+      <!-- Output Format -->
+      <div class="field">
+        <div class="sec-head" style="margin-bottom:8px;">Output Format</div>
+        <div class="seg" id="fmt-seg">
+          <button class="seg-btn active" data-v="prose">Prose</button>
+          <button class="seg-btn" data-v="markdown">Markdown</button>
+          <button class="seg-btn" data-v="bullets">Bullets</button>
+          <button class="seg-btn" data-v="steps">Steps</button>
+          <button class="seg-btn" data-v="json">JSON</button>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Enhancements -->
+      <div class="field">
+        <div class="sec-head" style="margin-bottom:8px;">Enhancements</div>
+        <div class="toggles">
+          <div class="toggle-card" data-k="persona" onclick="tog(this)">
+            <div class="tc-left">
+              <div class="tc-title">Expert Persona</div>
+              <div class="tc-desc">Give the model a domain expert identity</div>
+            </div>
+            <div class="pill-switch"></div>
+          </div>
+          <div class="toggle-card" data-k="cot" onclick="tog(this)">
+            <div class="tc-left">
+              <div class="tc-title">Chain-of-Thought</div>
+              <div class="tc-desc">Force reasoning before the final answer</div>
+            </div>
+            <div class="pill-switch"></div>
+          </div>
+          <div class="toggle-card on" data-k="xml" onclick="tog(this)">
+            <div class="tc-left">
+              <div class="tc-title">Claude XML Tags</div>
+              <div class="tc-desc">Structure prompt with &lt;tags&gt; for precision</div>
+            </div>
+            <div class="pill-switch"></div>
+          </div>
+          <div class="toggle-card" data-k="examples" onclick="tog(this)">
+            <div class="tc-left">
+              <div class="tc-title">Few-Shot Examples</div>
+              <div class="tc-desc">Embed example slots to guide the model</div>
+            </div>
+            <div class="pill-switch"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Example count (conditional) -->
+      <div class="field" id="ex-count-row" style="display:none;">
+        <div class="sec-head" style="margin-bottom:8px;">Example Slots</div>
+        <div class="seg" id="ex-seg">
+          <button class="seg-btn active" data-v="1">1 example</button>
+          <button class="seg-btn" data-v="2">2 examples</button>
+          <button class="seg-btn" data-v="3">3 examples</button>
+        </div>
+      </div>
+
+      <!-- Generate -->
+      <button class="gen-btn" onclick="generate()">
+        <span class="icon">⚡</span> Generate Perfect Prompt
+      </button>
+
+    </div>
+
+    <!-- ── RIGHT: Output ─────────────────────────────────────────── -->
+    <div class="panel right-panel">
+
+      <div class="out-header">
+        <div class="out-title">
+          Generated Prompt
+          <span class="out-meta" id="word-count" style="display:none;"></span>
+        </div>
+        <div class="out-actions">
+          <button class="act-btn" id="reset-btn" onclick="resetOutput()" style="display:none;">Reset</button>
+          <button class="act-btn" id="copy-btn" onclick="copyOut()" style="display:none;">Copy prompt</button>
+        </div>
+      </div>
+
+      <!-- Quality bar -->
+      <div class="quality-bar-wrap" id="quality-wrap">
+        <span class="quality-label">Prompt quality</span>
+        <div class="quality-track"><div class="quality-fill" id="quality-fill"></div></div>
+        <span class="quality-score" id="quality-score">—</span>
+      </div>
+
+      <!-- Output box -->
+      <div id="output-area">
+        <div class="out-empty" id="out-empty">
+          <div class="out-empty-icon">✦</div>
+          <h3>Your prompt will appear here</h3>
+          <p>Fill in your task on the left, adjust the options, then hit <strong>Generate</strong>.</p>
+        </div>
+        <textarea id="prompt-output" spellcheck="false"></textarea>
+      </div>
+
+      <!-- Tips -->
+      <div class="tips-row" id="tips-row"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────
+const s = {
+  tone: 'formal',
+  fmt: 'prose',
+  exCount: 1,
+  persona: false,
+  cot: false,
+  xml: true,
+  examples: false
+};
+
+// ── Segment groups ───────────────────────────────────────────────────
+function setupSeg(id, key) {
+  document.getElementById(id).querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(id).querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      s[key] = btn.dataset.v;
+    });
+  });
+}
+
+setupSeg('tone-seg', 'tone');
+setupSeg('fmt-seg', 'fmt');
+
+document.getElementById('ex-seg').querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('ex-seg').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    s.exCount = parseInt(btn.dataset.v);
+  });
+});
+
+// ── Toggle cards ─────────────────────────────────────────────────────
+function tog(el) {
+  const k = el.dataset.k;
+  s[k] = !s[k];
+  el.classList.toggle('on', s[k]);
+  if (k === 'examples') {
+    document.getElementById('ex-count-row').style.display = s.examples ? '' : 'none';
+  }
+}
+
+// ── Copy ─────────────────────────────────────────────────────────────
+function copyOut() {
+  const val = document.getElementById('prompt-output').value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = 'Copy prompt'; btn.classList.remove('success'); }, 2000);
+  });
+}
+
+function resetOutput() {
+  document.getElementById('prompt-output').style.display = 'none';
+  document.getElementById('prompt-output').value = '';
+  document.getElementById('out-empty').style.display = '';
+  document.getElementById('copy-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
+  document.getElementById('word-count').style.display = 'none';
+  document.getElementById('quality-wrap').style.display = 'none';
+  document.getElementById('tips-row').style.display = 'none';
+  document.getElementById('tips-row').innerHTML = '';
+}
+
+// ── Prompt builders ───────────────────────────────────────────────────
+const toneMap = {
+  formal:  'professional, precise, and authoritative',
+  neutral: 'clear, balanced, and straightforward',
+  casual:  'friendly, direct, and conversational'
+};
+
+const fmtMap = {
+  prose:    (t) => `Write in ${toneMap[t]} prose. Use coherent paragraphs and complete sentences.`,
+  markdown: ()  => `Format your response in Markdown. Use ## headers to separate sections, - bullet lists where helpful, **bold** for key terms, and \`code blocks\` for any code.`,
+  bullets:  ()  => `Respond using clear, concise bullet points only. Each bullet must be a complete, standalone thought. No prose paragraphs.`,
+  steps:    ()  => `Structure your response as a numbered step-by-step guide. Each step must start with an action verb and be specific enough to execute immediately.`,
+  json:     ()  => `Return a valid JSON object only. No text before or after the JSON. Use descriptive keys and nest logically. Wrap all string values in double quotes.`
+};
+
+function fmtInstruction(fmt, tone) {
+  return (fmtMap[fmt] || fmtMap.prose)(tone);
+}
+
+function buildXML(cfg) {
+  const { task, domain, audience, constraints, tone, fmt, persona, cot, examples, exCount } = cfg;
+  const parts = [];
+
+  if (persona) {
+    const d = domain ? `${domain} ` : '';
+    parts.push(`<role>\nYou are a world-class ${d}expert — ${toneMap[tone]}, deeply knowledgeable, and relentlessly focused on delivering exceptional outputs. You give exactly what is asked, nothing more, nothing less.\n</role>`);
+  }
+
+  parts.push(`<task>\n${task}\n</task>`);
+
+  const ctx = [];
+  if (domain)   ctx.push(`Domain: ${domain}`);
+  if (audience) ctx.push(`Audience: ${audience}`);
+  if (ctx.length) parts.push(`<context>\n${ctx.join('\n')}\n</context>`);
+
+  if (constraints?.trim()) {
+    parts.push(`<constraints>\n${constraints.trim()}\n</constraints>`);
+  }
+
+  parts.push(`<output_format>\n${fmtInstruction(fmt, tone)}\n</output_format>`);
+
+  if (cot) {
+    parts.push(`<instructions>\nBefore writing your response, reason inside <thinking> tags:\n  1. Restate the core ask in your own words\n  2. Identify all requirements and constraints\n  3. Consider multiple approaches — pick the best one and say why\n  4. Outline your response structure\n\nDeliver your final answer inside <answer> tags. Do not include your thinking in the answer.\n</instructions>`);
+  }
+
+  if (examples) {
+    let ex = '<examples>';
+    for (let i = 1; i <= exCount; i++) {
+      ex += `\n  <example_${i}>\n    <input>[Add your example input ${i}]</input>\n    <output>[Add the ideal output ${i}]</output>\n  </example_${i}>`;
+    }
+    ex += '\n</examples>';
+    parts.push(ex);
+  }
+
+  return parts.join('\n\n');
+}
+
+function buildMD(cfg) {
+  const { task, domain, audience, constraints, tone, fmt, persona, cot, examples, exCount } = cfg;
+  const parts = [];
+
+  if (persona) {
+    const d = domain ? `${domain} ` : '';
+    parts.push(`## Role\nYou are a world-class ${d}expert — ${toneMap[tone]}, deeply knowledgeable, and focused on outstanding results.`);
+  }
+
+  parts.push(`## Task\n${task}`);
+
+  const ctx = [];
+  if (domain)   ctx.push(`**Domain:** ${domain}`);
+  if (audience) ctx.push(`**Audience:** ${audience}`);
+  if (ctx.length) parts.push(`## Context\n${ctx.join('  \n')}`);
+
+  if (constraints?.trim()) parts.push(`## Constraints\n${constraints.trim()}`);
+
+  if (cot) {
+    parts.push(`## Reasoning\nThink through this before responding:\n1. Restate the core ask in your own words\n2. Identify all requirements and edge cases\n3. Consider multiple approaches and choose the best\n4. Outline your answer structure\n\nThen write your final response.`);
+  }
+
+  parts.push(`## Output Format\n${fmtInstruction(fmt, tone)}`);
+
+  if (examples) {
+    let ex = '## Examples\n';
+    for (let i = 1; i <= exCount; i++) {
+      ex += `\n**Example ${i}**  \nInput: [Add example input]  \nOutput: [Add ideal output]`;
+    }
+    parts.push(ex);
+  }
+
+  return parts.join('\n\n---\n\n');
+}
+
+// ── Quality score ─────────────────────────────────────────────────────
+function calcQuality(cfg) {
+  let score = 20;
+  const { task, domain, audience, constraints, persona, cot, xml, examples, fmt } = cfg;
+
+  if (task.length > 30) score += 15;
+  if (task.length > 80) score += 10;
+  if (domain)           score += 12;
+  if (audience)         score += 12;
+  if (constraints)      score += 10;
+  if (persona)          score += 8;
+  if (cot)              score += 10;
+  if (xml)              score += 8;
+  if (examples)         score += 10;
+  if (fmt !== 'prose')  score += 5;
+
+  return Math.min(score, 100);
+}
+
+// ── Tips ──────────────────────────────────────────────────────────────
+function buildTips(cfg) {
+  const tips = [];
+  if (!cfg.domain)      tips.push('Add a domain to anchor the model\'s expertise');
+  if (!cfg.audience)    tips.push('Specify the target audience for better calibration');
+  if (!cfg.constraints) tips.push('Add constraints (length, style, rules) to sharpen output');
+  if (!cfg.cot && cfg.task.length > 60) tips.push('Enable Chain-of-Thought for complex tasks');
+  if (!cfg.examples && cfg.fmt === 'json') tips.push('Add a few-shot example showing your exact JSON schema');
+  if (cfg.task.length < 30) tips.push('Expand your task description — more detail = better output');
+  return tips.slice(0, 4);
+}
+
+// ── Main generate ─────────────────────────────────────────────────────
+function generate() {
+  const task = document.getElementById('task').value.trim();
+  if (!task) {
+    const el = document.getElementById('task');
+    el.style.borderColor = 'var(--red)';
+    el.focus();
+    setTimeout(() => { el.style.borderColor = ''; }, 1800);
+    return;
+  }
+
+  const cfg = {
+    task,
+    domain:      document.getElementById('domain').value.trim(),
+    audience:    document.getElementById('audience').value.trim(),
+    constraints: document.getElementById('constraints').value.trim(),
+    tone:    s.tone,
+    fmt:     s.fmt,
+    persona: s.persona,
+    cot:     s.cot,
+    xml:     s.xml,
+    examples: s.examples,
+    exCount: s.exCount
+  };
+
+  const prompt = cfg.xml ? buildXML(cfg) : buildMD(cfg);
+  const words = prompt.trim().split(/\s+/).length;
+  const quality = calcQuality(cfg);
+  const tips = buildTips(cfg);
+
+  // Show prompt
+  const ta = document.getElementById('prompt-output');
+  ta.value = prompt;
+  ta.style.display = 'block';
+  document.getElementById('out-empty').style.display = 'none';
+
+  // Word count
+  const wc = document.getElementById('word-count');
+  wc.textContent = `${words} words`;
+  wc.style.display = '';
+
+  // Buttons
+  document.getElementById('copy-btn').style.display = '';
+  document.getElementById('reset-btn').style.display = '';
+
+  // Quality bar
+  const qw = document.getElementById('quality-wrap');
+  qw.style.display = 'flex';
+  setTimeout(() => {
+    document.getElementById('quality-fill').style.width = quality + '%';
+    document.getElementById('quality-score').textContent = quality + '%';
+  }, 50);
+
+  // Tips
+  const tr = document.getElementById('tips-row');
+  if (tips.length) {
+    tr.style.display = 'flex';
+    tr.innerHTML = tips.map(t =>
+      `<div class="tip-chip"><div class="dot"></div>${t}</div>`
+    ).join('');
+  } else {
+    tr.style.display = 'none';
+    tr.innerHTML = '';
+  }
+}
+
+// Keyboard shortcut: Cmd/Ctrl + Enter to generate
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') generate();
+});
+</script>
+</body>
+</html>
